@@ -116,6 +116,17 @@ Core modules:
 
 * * *
 
+## Development
+
+To modify or extend this script in a Python environment such as PyCharm or any other IDE, make sure to install the required dependencies by running:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+* * *
+
 ## Know bugs
 
 ### PyCharm warning:

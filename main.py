@@ -198,9 +198,9 @@ class SysUtils:
             i += 1
         return f"{x:.2f} {units[i]}"
 
-    # Function 'mtimestr'
+    # Function 'timestring'
     @staticmethod
-    def mtimestr(p: Path) -> str:
+    def timestring(p: Path) -> str:
         """
         Format a path's modification time into a YYYY-MM-DD HH:MM:SS string.
         Returns '-' on error or when the timestamp cannot be read.
@@ -318,9 +318,9 @@ class ProcessManager:
     safeguard list) and, after a grace period, SIGKILL to stubborn ones.
     """
 
-    # Function 'close_user_programs'
+    # Function 'closeprograms'
     @staticmethod
-    def close_user_programs(username: str, excludepids: Optional[set] = None, gracesecs: int = 5) -> None:
+    def closeprograms(username: str, excludepids: Optional[set] = None, gracesecs: int = 5) -> None:
         """
         Attempt to close all processes for 'username' except those in excludepids
         and a conservative skiplist. Uses 'ps' to enumerate processes and 'os.kill'
@@ -578,7 +578,7 @@ class FileOps:
         Keeps UI updates decoupled from filesystem traversal logic.
         """
         size = SysUtils.filesize(p)
-        mtime = SysUtils.mtimestr(p)
+        mtime = SysUtils.timestring(p)
         cb(str(p), size, mtime)
 
     # Function 'removefile'
@@ -757,6 +757,7 @@ class SysCleaner:
         """
         Recursively sum file sizes under path p without emitting rows.
         Returns total bytes; tolerates permission/file-not-found errors.
+        Does not follow directory symlinks during traversal.
         """
         total = 0
         try:
@@ -786,7 +787,7 @@ class SysCleaner:
                 for child in sorted(trash_dir.iterdir()):
                     self.checkstop()
                     size = self.sumtree(child)
-                    mtime = SysUtils.mtimestr(child)
+                    mtime = SysUtils.timestring(child)
                     self.filecb(str(child), size, mtime)  # list it
                     self.addbytes(size)
             except (OSError, PermissionError, FileNotFoundError):
@@ -805,7 +806,10 @@ class SysCleaner:
             return
         p = (uh / rel).expanduser()
         if p.is_dir():
-            self.addbytes(FileOps.wipedir(p, self.opts.dryrun, self.filecb))
+            if rel in USERDEEP or rel.startswith(".cache/"):
+                self.addbytes(FileOps.removetree(p, self.opts.dryrun, self.filecb))
+            else:
+                self.addbytes(FileOps.wipedir(p, self.opts.dryrun, self.filecb))
         else:
             self.addbytes(FileOps.removefile(p, self.opts.dryrun, self.filecb))
 
@@ -1408,6 +1412,7 @@ class BlitzClean(QWidget):
         """
         Display a larger About dialog with logo and website link.
         Uses a custom QDialog for layout control and clickable links.
+        Provides application metadata in a visually centered layout.
         """
         dlg = AboutDialog(self, VERSION, WEBSITEURL)
         dlg.exec()
@@ -1461,9 +1466,9 @@ class BlitzClean(QWidget):
             return
 
         self.confpersist()
-        if not self.opts.dryrun and self.opts.username:
+        if not self.opts.dryrun and self.opts.username and SysUtils.rootcheck():
             try:
-                ProcessManager.close_user_programs(self.opts.username, excludepids={os.getpid()}, gracesecs=5)
+                ProcessManager.closeprograms(self.opts.username, excludepids={os.getpid()}, gracesecs=5)
             except (OSError, PermissionError, subprocess.SubprocessError, ValueError):
                 pass
 
