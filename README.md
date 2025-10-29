@@ -9,222 +9,189 @@
 
 ## Features
 
-* **Dry-run mode:** See *exactly* what would be removed, with full path listings.
-* **Real mode mirrors dry-run listings:** Every file/dir removed is listed in the log.
-* **User cleanup:** Wipes common caches, histories, “recent files,” and browser caches.
-* **System cleanup (root):** Cleans `/tmp`, `/var/tmp`, prunes logs/crashes, journals, Snap/Flatpak leftovers, orphaned packages, and (optionally) old kernels.
-* **Aggressive mode (optional):** Extra, potentially disruptive cleanup (e.g., `~/snap`, `~/.ssh`). **Off by default.**
-* **Per-user target:** Select which home directory to clean.
-* **Progress + responsive UI:** Background worker with live logs.
-* **Persistent settings:** All toggles & values are saved across sessions.
-
-* * *
-
-## What gets cleaned (safe by default)
-
-### User-level (safe)
-
-* Generic caches: `~/.cache/*` including `fontconfig`, `mesa_shader_cache`, `pip`, `npm`, `yarn`, `pnpm`, `thunderbird`, `vscode`
-* VS Code: `~/.config/Code/Cache`, `CachedData`, `logs`
-* Discord caches: `~/.cache/discord`, `~/.config/discord/Cache`, `Code Cache`
-* Browser caches:
-
-  * Firefox profiles: `cache2`, `startupCache`
-  * Chromium/Chrome/Brave: `Cache`, `Code Cache` under `~/.cache` and `~/.config/*`
-
-* Flatpak user caches: `~/.var/app/*/cache`
-* Shell history (emptied, file preserved with secure perms): `~/.bash_history`, `~/.zsh_history`
-* Recent files metadata: `~/.cache/recently-used.xbel`, `~/.local/share/RecentDocuments`, `~/.local/share/recently-used.xbel`
-* Misc small artifacts: `.profile.bak`, `.shell.pre-oh-my-zsh`, `.wget-hsts`, `.zcompdump*`, `.thumbnails`, `.shutter`
-
-### System-level (safe, requires root)
-
-* Temp dirs: `/tmp`, `/var/tmp`
-* APT: `autoremove --purge`, `autoclean`, `clean`
-* Logs/Crashes: `/var/crash/*.crash`, `/var/log/*.[0-9]`, `/var/log/*.gz`
-* Journald: `journalctl --vacuum-time=<days>`, `--vacuum-size=<size>`
-* Snap: `snap set system refresh.retain=<N>`, remove **disabled revisions** only
-* Flatpak: `flatpak uninstall --unused -y`
-* Orphans: `deborphan` + purge
-* Extra caches: `/var/cache/fontconfig`, `/var/cache/man`, `/var/lib/systemd/coredump`, `/var/lib/snapd/cache`
-* Optional kernel cleanup: remove old `linux-image-*` (keeps current) and `update-grub`
-
-### Aggressive (optional, **risky**, off by default)
-
-* Remove `~/snap` entirely (application data)
-* Remove `~/.ssh` (keys/known_hosts) — may break SSH access
-
-> You can toggle **Aggressive app data cleanup** in the UI. Only enable this if you fully understand the impact.
+- GUI-based cleanup — no terminal fiddling
+- Lists and empties **Trash** for all users
+- User-space cleanup (caches, histories, browser caches)
+- System cleanup (tmp, logs, journal vacuum by **days**/**size**)
+- Snap/Flatpak leftovers removal, optional old-kernel purge
+- **Dry-Run** preview, **Stop** button, graceful process closing
+- **Freed Space** live counter (top-right)
+- Per-path toggles in **Preferences**
+- Root-aware with `pkexec`, optional shutdown after run
+- Config at `~/.config/blitzclean/config`
 
 * * *
 
 ## Requirements
 
-* **Python:** 3.10+ (recommended)
-* **Libraries (pip):**
-
-  * `PyQt6`
-  
-* **Optional system tools (used if present):**
-
-  * `policykit-1` (`pkexec`) — for elevation from the GUI
-  * `trash-empty` — for trash cleanup
-  * `flatpak` — if you use Flatpak
-  * `snapd` — if you use Snap
-  * `deborphan` — for orphan package detection
-
-Install Python deps:
+- Ubuntu 22.04+ (or Debian-based)
+- Python **3.9+**
+- Packages:
 
 ```bash
-python3 -m pip install --upgrade pip
-python3 -m pip install -r requirements.txt
+sudo apt update
+sudo apt install -y python3-pyqt6 python3-pyqt6.qt6-tools trash-cli
 ```
 
-Install optional tools (Ubuntu):
+* * *
+
+## Installation
+
+### Option A — Run from source (recommended for development)
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y policykit-1 trash-cli flatpak snapd deborphan
+git clone https://github.com/neoslab/blitzclean.git
+cd blitzclean
+chmod +x blitzclean.py
+./blitzclean.py
 ```
 
-* * *
+> Tip: Use a venv if you prefer `pip install PyQt6` instead of system packages.
 
-## Running
-
-### Normal user (safe for user-level cleanup)
+### Option B — System-wide install
 
 ```bash
-python3 blitzclean.py
+sudo install -m 755 blitzclean.py /usr/local/bin/blitzclean
+blitzclean
 ```
 
-### With system cleanup (root privileges)
+### Desktop launcher (optional)
 
-BlitzClean can self-elevate via **pkexec** when needed:
-
-* Run normally; select options (e.g., kernel cleanup). System tasks will execute if the app is running as root.
-* If your environment lacks pkexec, start as root manually:
+1. Copy icon to system pixmaps (if you have one):
 
 ```bash
-sudo -H python3 blitzclean.py
+sudo install -m 644 assets/blitzclean.png /usr/share/pixmaps/blitzclean.png
 ```
 
-> The app streams every command and file/dir path it touches in the output pane.
-
-* * *
-
-## Modes & Options
-
-* **Dry-run (preview only):** *Default recommended for first pass*
-
-  * Lists everything that would be removed.
-  * Shows bytes **estimated**.
-
-* **Real execution:**
-
-  * Mirrors dry-run listings and deletes the printed paths.
-  * Shows bytes **recovered** (root `/` and selected `~`).
-* **Clean browser caches:** Firefox/Chrome/Chromium/Brave (safe)
-* **Remove old kernels:** Keeps current kernel; runs `update-grub`
-* **Shutdown after cleanup:** Schedules immediate shutdown on success
-* **Run at boot / Run at shutdown:** Flags are persisted in the config (you can wire these into your own scheduler/service)
-* **Aggressive app data cleanup (risky):** Off by default; see above
-
-* * *
-
-## Configuration
-
-BlitzClean persists settings to:
-
-```
-~/.config/blitzclean/config
-```
-
-Example keys:
-
-```
-dryrun=1
-clearbrowsers=1
-clearkernels=0
-vacuumdays=7
-vacuumsize=100M
-keepsnaps=2
-shutafter=0
-username=<selected_user>
-userhome=/home/<selected_user>
-bootrun=0
-shutrun=0
-aggressive=0
-```
-
-You can safely edit this file while the app is closed.
-
-* * *
-
-## Permissions & Elevation
-
-* User-level actions run without elevation.
-* System actions require root. If not root, they no-op gracefully.
-* If `pkexec` is available, BlitzClean can launch a worker with elevated privileges internally. Otherwise, start the app with `sudo`.
-
-> **Wayland note:** If `pkexec` GUI prompts don’t appear, you may need `polkit-gnome` or a polkit agent running in your session.
-
-* * *
-
-## Build (optional, PyInstaller)
-
-To produce a standalone binary:
+2. Create a desktop entry:
 
 ```bash
-python3 -m pip install pyinstaller
-pyinstaller --noconfirm --windowed --name BlitzClean blitzclean.py
+cat <<'EOF' | sudo tee /usr/share/applications/blitzclean.desktop
+[Desktop Entry]
+Name=BlitzClean
+Comment=Ubuntu Cleanup GUI
+Exec=blitzclean
+Icon=blitzclean
+Terminal=false
+Type=Application
+Categories=System;Utility;
+EOF
 ```
 
-The binary will be in `dist/BlitzClean/`.
+3. Find **BlitzClean** in your application menu.
+
+### Root mode
+
+System-wide cleanup needs root. Either:
+
+* Start normally and select **root** in the app (it will invoke `pkexec`), or
+* Launch via:
+
+```bash
+sudo blitzclean
+```
 
 * * *
 
-## 🪲 Troubleshooting
+## Usage
 
-* **Snap removal shows “invalid revision”:** Fixed in v4.3 by pulling the **Rev** column (`$3`) from `snap list --all` instead of the Version column (`$2`).
-* **No files listed in real mode:** v4.3 logs every file/dir before deletion in both dry-run and real runs (see `FileOps.removefile/removetree`).
-* **`trash-empty not found`:** Install `trash-cli` or ignore the message (the step is skipped).
-* **No system cleanup happening:** Ensure you’re running as root (via `pkexec` or `sudo`).
-* **Deborphan failures in shells without process substitution:** v4.3 uses a portable approach (no `<(...)`).
+* **Dry-Run**: preview deletions
+* **Run**: perform cleanup
+* **Stop**: cancel safely
 
-* * *
-
-## Changelog
-
-* **v4.3-GUI**
-
-  * Log *every* file/dir in **real mode**, mirroring dry-run
-  * Fix Snap disabled revision parsing (use **Rev** column)
-  * Add many safe caches (pip/npm/yarn/pnpm, VS Code, Discord, Flatpak user caches)
-  * Add safe system caches (`/var/cache/fontconfig`, `/var/cache/man`, `/var/lib/systemd/coredump`, `/var/lib/snapd/cache`)
-  * Optional **Aggressive** toggle (off by default)
-  * Portable `deborphan` purge invocation
-
-* **v4.2-GUI**
-
-  * Initial public GUI with dry-run, system/user cleanup, journald vacuum, kernel removal, logs, and pkexec worker
+The table streams files as they’re discovered; the **Freed Space** counter updates live.
 
 * * *
 
-## Safety Notes
+## Preferences
 
-* **Dry-run first.** Review the log to confirm scope.
-* Aggressive mode can remove app data or credentials — leave it **off** unless you know you want this.
-* Kernel removal keeps the **current** kernel by design; still, use with care.
-* This tool assumes Ubuntu/Debian conventions; on other distros results may vary.
+* **Vacuum days / size** (journald)
+* **Keep Snap revisions**
+* **Shutdown after cleanup**
+* Per-path toggles for:
+
+  * User caches/histories/patterns
+  * System dirs (`/tmp`, `/var/tmp`, `/var/cache/*`)
+  * Log & crash globs (`/var/log/*.[0-9]`, `/var/crash/*.crash`)
+  * Root items (e.g., `/root/.cache`)
+  * Aggressive paths (`.ssh`, `snap`) — **use with care**
 
 * * *
 
-## Roadmap / Ideas
+## Safety
 
-* Per-component bytes report (top offenders)
-* Log export to file
-* Configurable include/exclude patterns
-* CLI flags mirroring the GUI for headless use
+* Designed to be conservative; **Dry-Run** first
+* Gracefully stops/ignores protected/system processes
+* Trash is **listed first** (with sizes/mtime) then emptied
+* Fallback emptying if `trash-cli` is unavailable
+
+* * *
+
+## Technical Design
+
+Core modules:
+
+* `SysUtils`, `ShellExec`, `ProcessManager`, `FileOps`
+* `SysCleaner` (orchestration + totals + stop handling)
+* `ConfigManager`, `UserDiscovery`
+* `PrefsDialog`, `AboutDialog`, `BlitzClean`, `App`
+
+* * *
+
+## Know bugs
+
+### PyCharm warning:
+
+```
+Cannot find reference 'connect' in 'pyqtSignal | function'
+```
+
+**Fix (stub tweak):** Edit `QtCore.pyi` in your environment’s `site-packages/PyQt6` and add `connect`/`emit` to `pyqtSignal`:
+
+```python
+# Support for new-style signals and slots.
+class pyqtSignal:
+
+    signatures = ...    # type: tuple[str, ...]
+
+    def __init__(self, *types: typing.Any, name: str = ...) -> None: ...
+
+    @typing.overload
+    def __get__(self, instance: None, owner: type['QObject']) -> 'pyqtSignal': ...
+
+    @typing.overload
+    def __get__(self, instance: 'QObject', owner: type['QObject']) -> 'pyqtBoundSignal': ...
+
+    # Added
+    def connect(self, slot: 'PYQT_SLOT') -> 'QMetaObject.Connection': ...
+    def emit(self, *args: typing.Any) -> None: ...
+```
+
+> Note: Editing stubs is brittle. Alternatively, add `# type: ignore[attr-defined]` on lines where `connect`/`emit` are flagged.
+
+### PyQt6 type-stubs error with `QDialogButtonBox`
+
+**Error example:**
+
+```
+Unexpected type(s):(Literal[StandardButton.Cancel])
+Possible type(s):(Literal[StandardButton.Ok])(Literal[StandardButton.Ok])
+```
+
+**Cause:** Some PyQt6 stubs model `setStandardButtons` as a single `StandardButton`, but at runtime it’s a flag enum, so `Ok | Cancel` gets flagged.
+
+```python
+from typing import cast
+btns = QDialogButtonBox(parent=self)
+buttons = cast(
+    QDialogButtonBox.StandardButton,
+    int(QDialogButtonBox.StandardButton.Ok) | int(QDialogButtonBox.StandardButton.Cancel)
+)
+btns.setStandardButtons(buttons)
+```
+
+* * *
+
 
 * * *
 
