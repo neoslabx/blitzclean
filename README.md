@@ -37,58 +37,27 @@ sudo apt install -y python3-pyqt6 python3-pyqt6.qt6-tools trash-cli
 
 ## Installation
 
-### Option A — Run from source (recommended for development)
-
 ```bash
+cd /tmp/
 git clone https://github.com/neoslab/blitzclean.git
-cd blitzclean
-chmod +x blitzclean.py
-./blitzclean.py
-```
-
-> Tip: Use a venv if you prefer `pip install PyQt6` instead of system packages.
-
-### Option B — System-wide install
-
-```bash
-sudo install -m 755 blitzclean.py /usr/local/bin/blitzclean
-blitzclean
-```
-
-### Desktop launcher (optional)
-
-1. Copy icon to system pixmaps (if you have one):
-
-```bash
+cd /tmp/blitzclean
+sudo install -m 755 main.py /usr/local/bin/blitzclean
 sudo install -m 644 assets/blitzclean.png /usr/share/pixmaps/blitzclean.png
-```
-
-2. Create a desktop entry:
-
-```bash
 cat <<'EOF' | sudo tee /usr/share/applications/blitzclean.desktop
 [Desktop Entry]
-Name=BlitzClean
-Comment=Ubuntu Cleanup GUI
-Exec=blitzclean
-Icon=blitzclean
-Terminal=false
 Type=Application
+Name=BlitzClean
+GenericName=System Cleanup
+Comment=Ubuntu cleanup GUI for caches, logs, snaps and more
+Exec=/usr/local/bin/blitzclean
+TryExec=/usr/local/bin/blitzclean
+Icon=/usr/share/pixmaps/blitzclean.png
+Terminal=false
 Categories=System;Utility;
+StartupNotify=true
+Keywords=cleanup;cache;system;maintenance;ubuntu;
 EOF
-```
-
-3. Find **BlitzClean** in your application menu.
-
-### Root mode
-
-System-wide cleanup needs root. Either:
-
-* Start normally and select **root** in the app (it will invoke `pkexec`), or
-* Launch via:
-
-```bash
-sudo blitzclean
+sudo update-desktop-database || true
 ```
 
 * * *
@@ -189,9 +158,6 @@ buttons = cast(
 )
 btns.setStandardButtons(buttons)
 ```
-
-* * *
-
 
 * * *
 
