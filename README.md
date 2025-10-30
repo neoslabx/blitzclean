@@ -47,26 +47,9 @@ sudo apt install -y python3-pyqt6 python3-pyqt6.qt6-tools trash-cli
 
 ```bash
 cd /tmp/
-git clone https://github.com/neoslab/blitzclean.git
-cd /tmp/blitzclean
-sudo install -m 755 main.py /usr/local/bin/blitzclean
-sudo install -m 644 assets/blitzclean.png /usr/share/pixmaps/blitzclean.png
-
-cat <<'EOF' | sudo tee /usr/share/applications/blitzclean.desktop
-[Desktop Entry]
-Type=Application
-Name=BlitzClean
-GenericName=System Cleanup
-Comment=Ubuntu cleanup GUI for caches, logs, snaps and more
-Exec=/usr/local/bin/blitzclean
-TryExec=/usr/local/bin/blitzclean
-Icon=/usr/share/pixmaps/blitzclean.png
-Terminal=false
-Categories=System;Utility;
-StartupNotify=true
-Keywords=cleanup;cache;system;maintenance;ubuntu;
-EOF
-sudo update-desktop-database || true
+git clone https://github.com/neoslabx/blitzclean
+sudo dpkg -i /tmp/blitzclean/dist/blitzclean_*_all.deb
+cd $HOME
 ```
 
 * * *
