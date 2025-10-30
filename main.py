@@ -19,8 +19,10 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from PyQt6.QtCore import QTimer, Qt
-from PyQt6.QtGui import QAction, QPixmap
+from PyQt6.QtCore import Qt
+from PyQt6.QtCore import QTimer
+from PyQt6.QtGui import QAction
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtWidgets import QCheckBox
 from PyQt6.QtWidgets import QComboBox
@@ -53,13 +55,13 @@ from typing import Tuple
 VERSION = "v4.9.1"
 
 # Define 'WEBSITEURL'
-WEBSITEURL = "https://neoslab.com/"
+WEBSITEURL = "https://neoslab.com"
 
 # Define 'CONFIGPATH'
-CONFIGPATH = Path.home() / ".config" / "blitzclean"
+CONFIGPATH = Path.home()/".config"/"blitzclean"
 
 # Define 'CONFIGFILE'
-CONFIGFILE = CONFIGPATH / "config"
+CONFIGFILE = CONFIGPATH/"config"
 
 # Define 'USERPATH'
 USERPATH = [
@@ -198,9 +200,9 @@ class SysUtils:
             i += 1
         return f"{x:.2f} {units[i]}"
 
-    # Function 'timestring'
+    # Function 'mtimestring'
     @staticmethod
-    def timestring(p: Path) -> str:
+    def mtimestring(p: Path) -> str:
         """
         Format a path's modification time into a YYYY-MM-DD HH:MM:SS string.
         Returns '-' on error or when the timestamp cannot be read.
@@ -289,18 +291,18 @@ class ShellExec:
         """
         if dryrun:
             return 0
-        env_prefix = f"HOME={shlex.quote(home)} XDG_DATA_HOME={shlex.quote(os.path.join(home, '.local/share'))} "
+        envprefix = f"HOME={shlex.quote(home)} XDG_DATA_HOME={shlex.quote(os.path.join(home, '.local/share'))} "
         try:
             current = os.environ.get("SUDO_USER") or os.environ.get("USER") or ""
             if os.geteuid() != 0 or current == username:
-                return ShellExec.cmdrun(env_prefix + cmd, dryrun=False)
+                return ShellExec.cmdrun(envprefix + cmd, dryrun=False)
         except (OSError, AttributeError):
             pass
 
         attempts = [
-            f"runuser -u {shlex.quote(username)} -- sh -lc {shlex.quote(env_prefix + cmd)}",
-            f"sudo -u {shlex.quote(username)} sh -lc {shlex.quote(env_prefix + cmd)}",
-            f"su -s /bin/sh -c {shlex.quote(env_prefix + cmd)} {shlex.quote(username)}",
+            f"runuser -u {shlex.quote(username)} -- sh -lc {shlex.quote(envprefix + cmd)}",
+            f"sudo -u {shlex.quote(username)} sh -lc {shlex.quote(envprefix + cmd)}",
+            f"su -s /bin/sh -c {shlex.quote(envprefix + cmd)} {shlex.quote(username)}",
         ]
 
         for c in attempts:
@@ -578,7 +580,7 @@ class FileOps:
         Keeps UI updates decoupled from filesystem traversal logic.
         """
         size = SysUtils.filesize(p)
-        mtime = SysUtils.timestring(p)
+        mtime = SysUtils.mtimestring(p)
         cb(str(p), size, mtime)
 
     # Function 'removefile'
@@ -787,7 +789,7 @@ class SysCleaner:
                 for child in sorted(trash_dir.iterdir()):
                     self.checkstop()
                     size = self.sumtree(child)
-                    mtime = SysUtils.timestring(child)
+                    mtime = SysUtils.mtimestring(child)
                     self.filecb(str(child), size, mtime)  # list it
                     self.addbytes(size)
             except (OSError, PermissionError, FileNotFoundError):
@@ -1001,85 +1003,8 @@ class SysCleaner:
             ShellExec.cmdrun("shutdown now", False)
 
 
-# Custom About dialog
-class AboutDialog(QDialog):
-    """
-    Custom About dialog with app logo, version, and a clickable link.
-    Sized larger than QMessageBox and uses rich text for the website.
-    Falls back gracefully if the logo cannot be found on disk.
-    """
-
-    # Function '__init__'
-    def __init__(self, parent: Optional[QWidget], version: str, website: str):
-        """
-        Initialize the About dialog with branding and metadata.
-        Sets up logo, title, version, description, and a clickable website link.
-        Uses /usr/share/pixmaps/blitzclean.png as the primary logo path with fallbacks.
-        """
-        super().__init__(parent)
-        self.setWindowTitle("About BlitzClean")
-        self.setModal(True)
-        self.setMinimumSize(520, 360)
-
-        logolabel = QLabel()
-        logolabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        candidate_paths = [
-            Path("/usr/share/pixmaps/blitzclean.png"),
-            Path(__file__).resolve().parent / "logo.png",
-            CONFIGPATH / "logo.png",
-        ]
-        pix: Optional[QPixmap] = None
-        for pth in candidate_paths:
-            if pth.is_file():
-                tmp = QPixmap(str(pth))
-                if not tmp.isNull():
-                    pix = tmp
-                    break
-
-        if pix:
-            logolabel.setPixmap(
-                pix.scaled(
-                    128, 128,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                )
-            )
-        else:
-            logolabel.setText("🧹")
-
-        title = QLabel(f"<b>BlitzClean</b>")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setStyleSheet("font-size: 22px;")
-
-        ver = QLabel(f"Version: {version}")
-        ver.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        link = QLabel(f'<a href="{website}">{website}</a>')
-        link.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        link.setTextFormat(Qt.TextFormat.RichText)
-        link.setOpenExternalLinks(True)
-
-        msg = QLabel("Ubuntu Cleanup GUI to reclaim space and tidy caches/logs.")
-        msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        msg.setWordWrap(True)
-        msg.setStyleSheet("color: #aaa;")
-
-        btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok, parent=self)
-        btns.accepted.connect(self.accept)
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(18, 18, 18, 18)
-        lay.setSpacing(12)
-        lay.addWidget(logolabel)
-        lay.addWidget(title)
-        lay.addWidget(ver)
-        lay.addWidget(msg)
-        lay.addWidget(link)
-        lay.addStretch(1)
-        lay.addWidget(btns)
-
-
-# Class 'PrefsDialog'
-class PrefsDialog(QDialog):
+# Class 'DialogPrefs'
+class DialogPrefs(QDialog):
     """
     Modal preferences dialog for tuning cleanup behavior and scope.
     Lets users configure journal limits, snap retention, and path toggles.
@@ -1198,6 +1123,83 @@ class PrefsDialog(QDialog):
         return self.opts, self.execbootstart, self.execshutdown, self.pathopts
 
 
+# Custom 'DialogAbout'
+class DialogAbout(QDialog):
+    """
+    Custom About dialog with app logo, version, and a clickable link.
+    Sized larger than QMessageBox and uses rich text for the website.
+    Falls back gracefully if the logo cannot be found on disk.
+    """
+
+    # Function '__init__'
+    def __init__(self, parent: Optional[QWidget], version: str, website: str):
+        """
+        Initialize the About dialog with branding and metadata.
+        Sets up logo, title, version, description, and a clickable website link.
+        Uses /usr/share/pixmaps/blitzclean.png as the primary logo path with fallbacks.
+        """
+        super().__init__(parent)
+        self.setWindowTitle("About BlitzClean")
+        self.setModal(True)
+        self.setMinimumSize(520, 360)
+
+        logolabel = QLabel()
+        logolabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        candidate_paths = [
+            Path("/usr/share/pixmaps/blitzclean.png"),
+            Path(__file__).resolve().parent / "logo.png",
+            CONFIGPATH / "logo.png",
+        ]
+        pix: Optional[QPixmap] = None
+        for pth in candidate_paths:
+            if pth.is_file():
+                tmp = QPixmap(str(pth))
+                if not tmp.isNull():
+                    pix = tmp
+                    break
+
+        if pix:
+            logolabel.setPixmap(
+                pix.scaled(
+                    128, 128,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+            )
+        else:
+            logolabel.setText("🧹")
+
+        title = QLabel(f"<b>BlitzClean</b>")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("font-size: 22px;")
+
+        ver = QLabel(f"Version: {version}")
+        ver.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        link = QLabel(f'<a href="{website}">{website}</a>')
+        link.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        link.setTextFormat(Qt.TextFormat.RichText)
+        link.setOpenExternalLinks(True)
+
+        msg = QLabel("Ubuntu Cleanup GUI to reclaim space and tidy caches/logs.")
+        msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        msg.setWordWrap(True)
+        msg.setStyleSheet("color: #aaa;")
+
+        btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok, parent=self)
+        btns.accepted.connect(self.accept)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(18, 18, 18, 18)
+        lay.setSpacing(12)
+        lay.addWidget(logolabel)
+        lay.addWidget(title)
+        lay.addWidget(ver)
+        lay.addWidget(msg)
+        lay.addWidget(link)
+        lay.addStretch(1)
+        lay.addWidget(btns)
+
+
 # Class 'BlitzClean'
 class BlitzClean(QWidget):
     """
@@ -1217,7 +1219,7 @@ class BlitzClean(QWidget):
         self.setWindowTitle(f"BlitzClean {VERSION} - Ubuntu Cleanup GUI")
         self.resize(1000, 720)
 
-        self.worker_thread = None
+        self.workerthread = None
         self.cleaner: Optional[SysCleaner] = None
         self.file_queue: "queue.Queue[Tuple[str,int,str]]" = queue.Queue()
 
@@ -1416,7 +1418,7 @@ class BlitzClean(QWidget):
         Uses a custom QDialog for layout control and clickable links.
         Provides application metadata in a visually centered layout.
         """
-        dlg = AboutDialog(self, VERSION, WEBSITEURL)
+        dlg = DialogAbout(self, VERSION, WEBSITEURL)
         dlg.exec()
 
     # Function 'onprefs'
@@ -1426,7 +1428,7 @@ class BlitzClean(QWidget):
         Updates in-memory options and persists them to disk immediately.
         Also refreshes the path options map for the next run.
         """
-        dlg = PrefsDialog(self, self.opts, self.prefsexecbootstart, self.prefsexecshutdown, self.pathopts)
+        dlg = DialogPrefs(self, self.opts, self.prefsexecbootstart, self.prefsexecshutdown, self.pathopts)
         if dlg.exec() == QDialog.DialogCode.Accepted:
             new_opts, boot, shut, popts = dlg.addvalues()
             self.opts = new_opts
@@ -1463,7 +1465,7 @@ class BlitzClean(QWidget):
         self.opts.userhome = home
         self.opts.dryrun = dry
 
-        if self.worker_thread and self.worker_thread.is_alive():
+        if self.workerthread and self.workerthread.is_alive():
             QMessageBox.warning(self, "Busy", "A cleanup task is already running.")
             return
 
@@ -1537,12 +1539,12 @@ class BlitzClean(QWidget):
                 self.btnrun.setEnabled(True)
                 self.btndry.setEnabled(True)
 
-        self.worker_thread = threading.Thread(target=workload, daemon=True)
-        self.worker_thread.start()
+        self.workerthread = threading.Thread(target=workload, daemon=True)
+        self.workerthread.start()
 
 
-# Class 'App'
-class App:
+# Class 'AppEntry'
+class AppEntry:
     """
     Minimal application bootstrapper for the BlitzClean GUI/worker.
     Runs the GUI normally or a worker process when invoked with --worker.
@@ -1601,4 +1603,4 @@ class App:
 
 # Callback
 if __name__ == "__main__":
-    App.main()
+    AppEntry.main()
