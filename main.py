@@ -50,7 +50,7 @@ from typing import Optional
 from typing import Tuple
 
 # Define 'VERSION'
-VERSION = "v4.9-GUI"
+VERSION = "v4.9.1"
 
 # Define 'WEBSITEURL'
 WEBSITEURL = "https://neoslab.com/"
@@ -1062,7 +1062,7 @@ class AboutDialog(QDialog):
         msg = QLabel("Ubuntu Cleanup GUI to reclaim space and tidy caches/logs.")
         msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
         msg.setWordWrap(True)
-        msg.setStyleSheet("color: #555;")
+        msg.setStyleSheet("color: #aaa;")
 
         btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok, parent=self)
         btns.accepted.connect(self.accept)

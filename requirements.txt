@@ -1,3 +1,2 @@
-pyinstaller
 pyqt6
 pyqt6-sip
