@@ -1168,11 +1168,13 @@ class PrefsDialog(QDialog):
         tabs.addTab(scroll, "Options")
 
         btns = QDialogButtonBox(parent=self)
-        btns.setStandardButtons(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel  # type: ignore[arg-type]
-        )
-        btns.accepted.connect(self.accept)
-        btns.rejected.connect(self.reject)
+        btnvalid = QPushButton("OK", self)
+        btncancel = QPushButton("Cancel", self)
+        btns.addButton(btnvalid, QDialogButtonBox.ButtonRole.AcceptRole)
+        btns.addButton(btncancel, QDialogButtonBox.ButtonRole.RejectRole)
+
+        btnvalid.clicked.connect(self.accept)
+        btncancel.clicked.connect(self.reject)
 
         lay = QVBoxLayout(self)
         lay.addWidget(tabs)
