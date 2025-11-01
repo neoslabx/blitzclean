@@ -52,7 +52,7 @@ from typing import Optional
 from typing import Tuple
 
 # Define 'VERSION'
-VERSION = "v4.9.1"
+VERSION = "v4.9.2"
 
 # Define 'WEBSITEURL'
 WEBSITEURL = "https://neoslab.com"
@@ -88,11 +88,13 @@ USERPATH = [
     ".cache/ubuntu-report",
     ".cache/vscode",
     ".cache/yarn",
+    ".config/blitzclean",
     ".config/Code/Cache",
     ".config/Code/CachedData",
     ".config/Code/logs",
     ".config/discord/Cache",
     ".config/discord/Code Cache",
+    ".config/mediasane",
     ".profile.bak",
     ".shell.pre-oh-my-zsh",
     ".shutter",
@@ -1244,15 +1246,15 @@ class BlitzClean(QWidget):
         for u, home in self.users:
             self.cmb_user.addItem(f"{u}  —  {home}", (u, home))
 
-        self.lbl_total = QLabel("Cleared Space\n0.00 MB")
-        self.lbl_total.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        self.lbl_total.setStyleSheet("font-weight: 600;")
+        self.lbltotal = QLabel("Cleared Space\n0.00 MB")
+        self.lbltotal.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.lbltotal.setStyleSheet("font-weight: 600;")
 
         userrow = QHBoxLayout()
         userrow.addWidget(QLabel("User to clean:"))
         userrow.addWidget(self.cmb_user)
         userrow.addStretch()
-        userrow.addWidget(self.lbl_total)
+        userrow.addWidget(self.lbltotal)
 
         self.btndry = QPushButton("Dry-Run")
         self.btnrun = QPushButton("Run")
@@ -1409,7 +1411,7 @@ class BlitzClean(QWidget):
                     pass
         except queue.Empty:
             if updated:
-                self.lbl_total.setText(f"Cleared Space\n{SysUtils.unitsize(self.showbytes)}")
+                self.lbltotal.setText(f"Cleared Space\n{SysUtils.unitsize(self.showbytes)}")
 
     # Function 'onabout'
     def onabout(self):
@@ -1458,7 +1460,7 @@ class BlitzClean(QWidget):
         """
         self.table.setRowCount(0)
         self.showbytes = 0
-        self.lbl_total.setText("Cleared Space\n0.00 MB")
+        self.lbltotal.setText("Cleared Space\n0.00 MB")
 
         user, home = self.cmb_user.currentData()
         self.opts.username = user
@@ -1519,7 +1521,7 @@ class BlitzClean(QWidget):
                                     try:
                                         total_b = int(parts[1])
                                         self.showbytes = total_b
-                                        self.lbl_total.setText(f"Cleared Space\n{SysUtils.unitsize(total_b)}")
+                                        self.lbltotal.setText(f"Cleared Space\n{SysUtils.unitsize(total_b)}")
                                     except (ValueError, TypeError, OverflowError):
                                         pass
                         proc.wait()
@@ -1532,7 +1534,7 @@ class BlitzClean(QWidget):
                     self.cleaner = SysCleaner(self.opts, self.filerow, self.pathopts)
                     self.cleaner.run()
                     self.showbytes = getattr(self.cleaner, "totalbytes", self.showbytes)
-                    self.lbl_total.setText(f"Cleared Space\n{SysUtils.unitsize(self.showbytes)}")
+                    self.lbltotal.setText(f"Cleared Space\n{SysUtils.unitsize(self.showbytes)}")
             finally:
                 self.progress.setVisible(False)
                 self.btnstop.setEnabled(False)
