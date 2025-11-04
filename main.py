@@ -52,7 +52,7 @@ from typing import Optional
 from typing import Tuple
 
 # Define 'VERSION'
-VERSION = "v4.9.3"
+VERSION = "v4.9.4"
 
 # Define 'WEBSITEURL'
 WEBSITEURL = "https://neoslab.com"
@@ -65,6 +65,7 @@ CONFIGFILE = CONFIGPATH/"config"
 
 # Define 'USERPATH'
 USERPATH = [
+    ".android",
     ".cache/JetBrains",
     ".cache/Microsoft",
     ".cache/babl",
@@ -72,9 +73,16 @@ USERPATH = [
     ".cache/easytag",
     ".cache/fontconfig",
     ".cache/gimp",
+    ".cache/gitstatus",
     ".cache/keepassxc",
+    ".cache/JetBrains",
+    ".cache/JNA",
     ".cache/mesa_shader_cache",
+    ".cache/Microsoft",
     ".cache/npm",
+    ".cache/Proton",
+    ".cache/Proton AG",
+    ".cache/protonmail",
     ".cache/obexd",
     ".cache/pip",
     ".cache/pnpm",
@@ -91,7 +99,6 @@ USERPATH = [
     ".config/Code/Cache",
     ".config/Code/CachedData",
     ".config/Code/logs",
-    ".config/blitzclean",
     ".config/discord/Cache",
     ".config/discord/Code Cache",
     ".config/mediasane",
@@ -100,6 +107,7 @@ USERPATH = [
     ".config/shotwell",
     ".config/tiling-assistant",
     ".dotnet",
+    ".pki",
     ".profile.bak",
     ".shell.pre-oh-my-zsh",
     ".shutter",
