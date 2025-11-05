@@ -46,11 +46,10 @@ sudo apt install -y python3-pyqt6 python3-pyqt6.qt6-tools trash-cli
 
 ## Installation
 
+Download the latest DEB version from the [releases](https://github.com/neoslabx/blitzclean/releases/) section and use the following command:
+
 ```bash
-cd /tmp/
-git clone https://github.com/neoslabx/blitzclean
-sudo dpkg -i /tmp/blitzclean/dist/blitzclean_*_all.deb
-cd $HOME
+sudo dpkg -i blitzclean_*_all.deb
 ```
 
 * * *
@@ -105,8 +104,11 @@ Core modules:
 To modify or extend this script in a Python environment such as PyCharm or any other IDE, make sure to install the required dependencies by running:
 
 ```bash
+git clone https://github.com/neoslabx/blitzclean
+cd blitzclean
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python main.py
 ```
 
 * * *
