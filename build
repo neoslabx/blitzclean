@@ -14,7 +14,7 @@ appname="BlitzClean"
 debname="blitzclean"
 
 # Define 'debvers'
-debvers="4.9.4"
+debvers="4.9.6"
 
 # Define 'debarch'
 debarch="all"
@@ -43,6 +43,7 @@ mkdir -p "${pkgroot}/DEBIAN"
 mkdir -p "${pkgroot}/usr/bin"
 mkdir -p "${pkgroot}/usr/share/applications"
 mkdir -p "${pkgroot}/usr/share/pixmaps"
+mkdir -p "${pkgroot}/usr/share/${debname}/icons"
 
 # Create 'control' file
 cat > "${pkgroot}/DEBIAN/control" <<EOF
@@ -66,6 +67,7 @@ echo "Clean legacy locations from old packages..."
 rm -f /usr/local/bin/blitzclean
 rm -f /usr/share/pixmaps/blitzclean.png
 rm -f /usr/share/applications/blitzclean.desktop
+rm -rf /usr/share/blitzclean
 sleep 1s
 exit 0
 EOF
@@ -86,8 +88,12 @@ chmod 0755 "${pkgroot}/DEBIAN/preinst" "${pkgroot}/DEBIAN/postinst"
 # Ensure your main.py has a Python3 shebang '#!/usr/bin/env python3'
 install -m 0755 "${execfile}" "${pkgroot}${execpath}"
 
-# Install package icon
+# Install package logo
 install -m 0644 "assets/images/${debname}.png" "${pkgroot}/usr/share/pixmaps/${debname}.png"
+
+# Install package icons
+install -m 0644 "assets/icons/error.png" "${pkgroot}/usr/share/${debname}/icons/error.png"
+install -m 0644 "assets/icons/success.png" "${pkgroot}/usr/share/${debname}/icons/success.png"
 
 # Create desktop launcher
 cat > "${pkgroot}/usr/share/applications/${debname}.desktop" <<EOF
