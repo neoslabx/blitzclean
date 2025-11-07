@@ -68,10 +68,7 @@ CONFIGFILE = CONFIGPATH/"config"
 
 # Define 'USERPATH'
 USERPATH = [
-    "Android",
     ".android",
-    ".cache/JetBrains",
-    ".cache/Microsoft",
     ".cache/babl",
     ".cache/discord",
     ".cache/easytag",
@@ -79,18 +76,18 @@ USERPATH = [
     ".cache/gimp",
     ".cache/gitstatus",
     ".cache/inkscape",
-    ".cache/keepassxc",
     ".cache/JetBrains",
     ".cache/JNA",
+    ".cache/keepassxc",
     ".cache/mesa_shader_cache",
     ".cache/Microsoft",
     ".cache/npm",
-    ".cache/Proton",
-    ".cache/Proton AG",
-    ".cache/protonmail",
     ".cache/obexd",
     ".cache/pip",
     ".cache/pnpm",
+    ".cache/Proton AG",
+    ".cache/Proton",
+    ".cache/protonmail",
     ".cache/shotwell",
     ".cache/shutter",
     ".cache/sublime-text",
@@ -106,6 +103,7 @@ USERPATH = [
     ".config/Code/logs",
     ".config/discord/Cache",
     ".config/discord/Code Cache",
+    ".config/JetBrains",
     ".config/mediasane",
     ".config/rclone",
     ".config/rclone-browser",
@@ -115,6 +113,8 @@ USERPATH = [
     ".gitconfig",
     ".gnupg",
     ".java",
+    ".local/share/TelegramDesktop",
+    ".local/share/virtualenv",
     ".pki",
     ".profile.bak",
     ".putty",
@@ -124,7 +124,8 @@ USERPATH = [
     ".thumbnails",
     ".wget-hsts",
     ".zcompdump",
-    ".zshrc.bak"
+    ".zshrc.bak",
+    "Android"
 ]
 
 # Define 'USERAGGRESIVE'
@@ -1184,8 +1185,8 @@ class DialogPrefs(QDialog):
 
         addsection("User: Paths", USERPATH)
         addsection("User: Histories", USERHISTORY)
-        addsection("User: Patterns (Firefox/Chromium/Brave/Flatpak etc.)", USERBROWSERS)
-        addsection("User: Patterns (Misc)", USERMISCS)
+        addsection("User: Browsers", USERBROWSERS)
+        addsection("User: Miscs", USERMISCS)
         addsection("User: Aggressive (DANGEROUS)", USERAGGRESIVE)
         addsection("Root: Items", ROOTITEMS)
         addsection("System: Directories", SYSDIRS)
@@ -1827,7 +1828,9 @@ class BlitzClean(QWidget):
 
         # Function 'fadeafter'
         def fadeafter():
-            """Finalize the fade by clearing rows and resetting opacity."""
+            """Clears all rows in the table after the fade animation ends.
+            Removes the opacity effect from the table to restore normal appearance.
+            Finalizes the fade-out process by resetting the table to its initial state."""
             self.table.setRowCount(0)
             self.table.setGraphicsEffect(None)
 
