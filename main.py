@@ -15,7 +15,7 @@ import stat
 import signal
 import time
 
-# Import packages
+# Import PIP packages
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -55,7 +55,7 @@ from typing import Optional
 from typing import Tuple
 
 # Define 'VERSION'
-VERSION = "v4.9.6"
+VERSION = "v4.9.7"
 
 # Define 'WEBSITEURL'
 WEBSITEURL = "https://neoslab.com"
@@ -64,7 +64,7 @@ WEBSITEURL = "https://neoslab.com"
 CONFIGPATH = Path.home()/".config"/"blitzclean"
 
 # Define 'CONFIGFILE'
-CONFIGFILE = CONFIGPATH/"config"
+CONFIGFILE = CONFIGPATH/"blitzclean.conf"
 
 # Define 'USERPATH'
 USERPATH = [
@@ -109,6 +109,7 @@ USERPATH = [
     ".config/rclone-browser",
     ".config/shotwell",
     ".config/tiling-assistant",
+    ".config/tubereaver",
     ".dotnet",
     ".gitconfig",
     ".gnupg",
@@ -1161,7 +1162,7 @@ class DialogPrefs(QDialog):
         g.addRow(self.cbrunshutdown)
         g.addRow(QLabel("Vacuum days:"), self.spindays)
         g.addRow(QLabel("Vacuum size:"), self.editsize)
-        g.addRow(QLabel("Keep Snap revisions:"), self.spinkeep)
+        g.addRow(QLabel("Snap revisions:"), self.spinkeep)
 
         loadopts = QWidget()
         v = QVBoxLayout(loadopts)
@@ -1282,6 +1283,7 @@ class DialogAbout(QDialog):
         logopath = [
             Path("/usr/share/pixmaps/blitzclean.png")
         ]
+
         pix: Optional[QPixmap] = None
         for pth in logopath:
             if pth.is_file():
@@ -1291,15 +1293,7 @@ class DialogAbout(QDialog):
                     break
 
         if pix:
-            logolabel.setPixmap(
-                pix.scaled(
-                    96, 96,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                )
-            )
-        else:
-            logolabel.setText("🧹")
+            logolabel.setPixmap(pix.scaled(96, 96, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
 
         title = QLabel(f"<b>BlitzClean</b>")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1313,12 +1307,12 @@ class DialogAbout(QDialog):
         link.setTextFormat(Qt.TextFormat.RichText)
         link.setOpenExternalLinks(True)
         msg = QLabel(
-            "Ubuntu Cleanup GUI to free space safely.\n"
-            "Removes caches, logs, and old system files."
+            "Ubuntu Cleanup GUI to free space safely\n"
+            "Removes caches, logs, and old system files"
         )
         msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
         msg.setWordWrap(True)
-        msg.setStyleSheet("color: #aaa;")
+        msg.setStyleSheet("color: #999;")
 
         btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok, parent=self)
         btns.accepted.connect(self.accept)
@@ -1363,6 +1357,7 @@ class DialogCompleted(QDialog):
         ] if not error_message else [
             Path("/usr/share/blitzclean/icons/error.png")
         ]
+
         pix: Optional[QPixmap] = None
         for pth in iconpath:
             if pth.is_file():
@@ -1371,13 +1366,7 @@ class DialogCompleted(QDialog):
                     pix = tmp
                     break
         if pix:
-            iconlabel.setPixmap(
-                pix.scaled(
-                    96, 96,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                )
-            )
+            iconlabel.setPixmap(pix.scaled(96, 96, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
 
         title = QLabel("<b>Cleanup finished successfully</b>" if not error_message else "<b>Cleanup failed</b>")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
