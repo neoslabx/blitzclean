@@ -2,10 +2,10 @@
 set -euo pipefail
 
 # Define 'devname'
-devname="NeosLab"
+devname="Sqoove"
 
 # Define 'devmail'
-devmail="info@neoslab.com"
+devmail="support@sqoove.com"
 
 # Define 'appname'
 appname="BlitzClean"
@@ -14,7 +14,7 @@ appname="BlitzClean"
 debname="blitzclean"
 
 # Define 'debvers'
-debvers="4.9.7"
+debvers="4.9.8"
 
 # Define 'debarch'
 debarch="all"

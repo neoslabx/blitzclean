@@ -11,6 +11,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import socket
 import stat
 import signal
 import time
@@ -53,18 +54,25 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from urllib.error import HTTPError
+from urllib.error import URLError
+from urllib.request import Request
+from urllib.request import urlopen
 
 # Define 'VERSION'
-VERSION = "v4.9.7"
+VERSION = "v4.9.8"
+
+# Define 'APPNAME'
+APPNAME = "BlitzClean"
 
 # Define 'WEBSITEURL'
-WEBSITEURL = "https://neoslab.com"
+WEBSITEURL = "https://sqoove.com"
 
 # Define 'CONFIGPATH'
-CONFIGPATH = Path.home()/".config"/"blitzclean"
+CONFIGPATH = Path.home() / ".config" / "blitzclean"
 
 # Define 'CONFIGFILE'
-CONFIGFILE = CONFIGPATH/"blitzclean.conf"
+CONFIGFILE = CONFIGPATH / "blitzclean.conf"
 
 # Define 'USERPATH'
 USERPATH = [
@@ -1274,7 +1282,7 @@ class DialogAbout(QDialog):
         Uses /usr/share/pixmaps/blitzclean.png as the primary logo path with fallbacks.
         """
         super().__init__(parent)
-        self.setWindowTitle("About BlitzClean")
+        self.setWindowTitle(f"About {APPNAME}")
         self.setModal(True)
         self.setMinimumSize(520, 360)
 
@@ -1295,7 +1303,7 @@ class DialogAbout(QDialog):
         if pix:
             logolabel.setPixmap(pix.scaled(96, 96, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
 
-        title = QLabel(f"<b>BlitzClean</b>")
+        title = QLabel(f"<b>{APPNAME}</b>")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         title.setStyleSheet("font-size: 22px;")
 
@@ -1428,7 +1436,7 @@ class BlitzClean(QWidget):
         Loads persisted configuration and primes default execution options.
         """
         super().__init__()
-        self.setWindowTitle(f"BlitzClean {VERSION} - Ubuntu Cleanup GUI")
+        self.setWindowTitle(f"{APPNAME} {VERSION} - Ubuntu Cleanup GUI")
         self.resize(1000, 720)
 
         self.workerthread = None
@@ -1828,6 +1836,173 @@ class BlitzClean(QWidget):
         anim.start()
 
 
+# Class 'UpdateChecker'
+class UpdateChecker:
+    """
+    Check GitHub releases for a newer version.
+    Show a modal popup reusing the About-style layout.
+    Intended to be called once at application startup.
+    """
+
+    # Function '__init__'
+    def __init__(self, parent: QWidget, appname: str, currvers: str, gitrepo: str,
+                 logo_paths: Optional[List[Path]] = None):
+        """
+        Store configuration needed for update checks.
+        Accepts parent widget, app name, current version and repo.
+        Optional logo paths override the default guessed location.
+        """
+        self.parent = parent
+        self.appname = appname
+        self.currvers = currvers
+        self.gitrepo = gitrepo
+        self.logo_paths = logo_paths or [
+            Path(f"/usr/share/pixmaps/{appname.lower()}.png")
+        ]
+
+    # Function 'versionparser'
+    @staticmethod
+    def versionparser(ver: str) -> Tuple[int, ...]:
+        """
+        Parse a version string like 'v1.2.3' into integers.
+        Ignores any non-numeric suffixes after the core numbers.
+        Returns a tuple suitable for safe semantic comparison.
+        """
+        v = ver.strip()
+        if v.startswith(("v", "V")):
+            v = v[1:]
+        parts: List[int] = []
+        for part in v.split("."):
+            try:
+                parts.append(int(part))
+            except ValueError:
+                break
+        return tuple(parts) or (0,)
+
+    # Function 'checknewer'
+    def checknewer(self, current: str, latest: str) -> bool:
+        """
+        Compare two version strings in semantic order.
+        Pads shorter tuples with zeros before comparison.
+        Returns True when latest is strictly greater.
+        """
+        c = self.versionparser(current)
+        l = self.versionparser(latest)
+        ln = max(len(c), len(l))
+        c = c + (0,) * (ln - len(c))
+        l = l + (0,) * (ln - len(l))
+        return c < l
+
+    # Function 'checknotify'
+    def checknotify(self, timeout: int = 3):
+        """
+        Perform a single update check against GitHub releases.
+        If a newer tag exists, show the update popup dialog.
+        Intended to be called from the main GUI thread.
+        """
+        latest = self.fetchtag(timeout=timeout)
+        if not latest:
+            return
+        if not self.checknewer(self.currvers, latest):
+            return
+        url = f"https://github.com/{self.gitrepo}/releases/tag/{latest}"
+        self.showupdate(latest, url)
+
+    # Function 'fetchtag'
+    def fetchtag(self, timeout: int = 3) -> Optional[str]:
+        """
+        Call GitHub API to obtain the latest release tag.
+        Uses /repos/{repo}/releases/latest with a short timeout.
+        Returns the tag name string or None on any failure.
+        """
+        try:
+            url = f"https://api.github.com/repos/{self.gitrepo}/releases/latest"
+            req = Request(
+                url,
+                headers={
+                    "Accept": "application/vnd.github+json",
+                    "User-Agent": self.appname,
+                },
+            )
+            with urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read().decode("utf-8", "ignore"))
+
+            tag = str(data.get("tag_name") or "").strip()
+            return tag or None
+
+        except (HTTPError, URLError, socket.timeout, ValueError, OSError):
+            return None
+
+    # Function 'showupdate'
+    def showupdate(self, latest: str, url: str):
+        """
+        Build and display the update popup dialog.
+        Reuses the About layout with logo, text and link.
+        Blocks until user closes the window or presses OK.
+        """
+        dlg = QDialog(self.parent)
+        dlg.setWindowTitle("Update Available")
+        dlg.setModal(True)
+        dlg.setMinimumSize(520, 360)
+
+        logolabel = QLabel()
+        logolabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        pix: Optional[QPixmap] = None
+        for pth in self.logo_paths:
+            if pth.is_file():
+                tmp = QPixmap(str(pth))
+                if not tmp.isNull():
+                    pix = tmp
+                    break
+        if pix:
+            logolabel.setPixmap(
+                pix.scaled(
+                    96,
+                    96,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+
+        title = QLabel(f"<b>A new version of {self.appname} is available</b>")
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        title.setStyleSheet("font-size: 20px;")
+
+        ver = QLabel(f"Current version {self.currvers}\nLatest version {latest}")
+        ver.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        msg = QLabel(
+            "A newer release is available on GitHub.\n"
+            "Please download the latest version from the link below."
+        )
+        msg.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        msg.setWordWrap(True)
+        msg.setStyleSheet("color: #999;")
+
+        link = QLabel(f'<a href="{url}">{url}</a>')
+        link.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        link.setTextFormat(Qt.TextFormat.RichText)
+        link.setOpenExternalLinks(True)
+
+        btns = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok, parent=dlg)
+        btns.accepted.connect(dlg.accept)
+
+        layout = QVBoxLayout(dlg)
+        layout.setContentsMargins(18, 18, 18, 18)
+        layout.setSpacing(12)
+        layout.addWidget(logolabel)
+        layout.addSpacing(10)
+        layout.addWidget(title)
+        layout.addWidget(ver)
+        layout.addWidget(msg)
+        layout.addWidget(link)
+        layout.addStretch(1)
+        layout.addSpacing(10)
+        layout.addWidget(btns)
+        dlg.exec()
+
+
 # Class 'AppEntry'
 class AppEntry:
     """
@@ -1892,6 +2067,16 @@ class AppEntry:
         app = QApplication(sys.argv)
         win = BlitzClean()
         win.show()
+
+        checker = UpdateChecker(
+            parent=win,
+            appname=APPNAME,
+            currvers=VERSION,
+            gitrepo="sqoove/blitzclean",
+            logo_paths=[Path("/usr/share/pixmaps/blitzclean.png")],
+        )
+        win.updatecheck = checker
+        QTimer.singleShot(1500, checker.checknotify)
         sys.exit(app.exec())
 
 
